@@ -1,0 +1,528 @@
+1. context + Provider + mapStateToProps + mapDispatchToProps
+2. dispatch 2 actions 
+3. dispatch action using saga. 
+
+---
+
+stackblitz: 
+	1. simple eg. to dispatch an action in App.js 
+		https://stackblitz.com/edit/react-redux-incr-decr-simple-eg1	+ https://stackblitz.com/edit/react-redux-simple-exple1
+		https://www.youtube.com/watch?v=CVpUuw9XSjY								
+
+---
+1) 
+	https://www.youtube.com/watch?v=CVpUuw9XSjY  
+	- react only passes data in top-down, not sideways to siblings.
+	- to solve, move data to the single parent comp, (of the siblings).
+							app
+							 |	
+							parentcomp + data 
+							|       |        |
+			     searchmovies + movieslist + Login
+									|
+								  movie
+								  
+	few probs:
+		- parentcomp should not be handling data 
+		- deleting a movie from "movie" comp will be a nightmare. (do we pass references all the way to the top ?? wtf??)
+		
+		
+	Redux: redux tries to solve this problem.
+							app
+							 |	
+							parentcomp  								Redux Store
+							|       |        |								|	
+			     searchmovies + movieslist + Login						   data (now everyone can query the data).
+									|
+								  movie
+		
+---
+
+
+
+
+============================================================
+
+OTHER REACT STUFF
+
+============================================================
+
+---
+
+Diff. import statements;
+
+import React from 'react';
+import React, {useState} from 'react';
+import React, {createContext} from 'react';
+
+
+---
+
+Scenario: Adding a textbox input to a functional component. 
+import React, { useState } from 'react';
+	+
+	const [number, setNumber] = useState(1);
+	+
+	<input type='text' value={number} onchange={(e)=>{setNumber(e.target.value)}}
+
+---
+
+ref: https://www.youtube.com/watch?v=CGRpfIUURE0&t=300s
+
+	Theory context & provider in react : 	
+		ThemeContext = createContext() + export default class ThemeContextProvider + <ThemeContext.Provider value={{...this.state}}> 
+																						{this.props.children}
+																					</ThemeContext.Provider> within itself.
+		+ App.js 
+			<ThemeClassProvider> // when u wrap it like this we can get Childcomp1 & 2 in this.props.children 
+				<Childcomp1 />
+				<Childcomp2 />
+			</ThemeClassProvider
+
+		+ useContext() // for reUse in another functional component.
+
+NOTE: we do NOT require redux for this !!!.
+
+---
+
+	Passing data to this.props.children 	https://stackoverflow.com/questions/32370994/how-to-pass-props-to-this-props-children
+		1) <div>{React.cloneElement(this.props.children, {...this.props})}</div>
+		2) <div>
+				{React.cloneElement(this.props.children, { loggedIn: this.state.loggedIn })}
+			</div>
+	
+	React.Fragment, React.Children.map(), React.cloneElement()
+
+---
+
+context + provider:
+	Practical One: 	https://stackblitz.com/edit/react-itbvxt
+	xtra: https://scotch.io/courses/10-react-challenges-beginner/use-context-to-pass-data
+
+Multiple Context Providers: https://stackoverflow.com/questions/53346462/react-multiple-contexts
+	
+---
+	
+.Consumer : 
+	<UserContext.Consumer>
+		...
+	</UserContext.Consumer>
+		is same as useContext(). Use useContext() as its cleaner.
+	
+---
+
+Context API vs redux  vs useReducer
+	>> Context API prompts a re-render on each update of the state and re-renders all components regardless. 
+	Redux however, only re-renders the updated components.
+	>> Context API is reacts way of avoiding prop drilling, between unconnected/sibling/non-linear components
+	>> useReducer is reacts way of replicating redux, its not scalable, but it takes away a lot of boilerplate redux-code.
+		ref: https://www.youtube.com/watch?v=kK_Wqx3RnHk 
+		- import React, { useReducer } from 'react';
+		- 2nd param: LHS will wary if 2nd param is an obj or a value.
+			>> [state, dispatch] = useReducer(reducerMethod, initialStateObj);
+			>> [count] = useReducer(reducerMethod, 0 );
+
+		- function reducerMethod (state, action) {
+				switch(action.type){	// ...
+				}
+			}
+			
+		- const increment = () => { dispatch({type: 'increment')}; // this is now similar to redux's syntax.	
+---
+======
+
+Other react hooks: 
+	>> useState, useContext, useReducer, 
+	>> useRef
+	>> useEffect, useCallback, useMemo
+
+	>> useDebugValue
+	>> useLayoutEffect 
+	>> useImperativeHandler
+
+---
+	useRef 
+	
+	
+---
+	useEffect
+	
+	useEffect + API call 
+---
+	useCallback -vs- useMemo 
+	useCallback: returns a method. So it needs additional execution using (). 
+	useMemo: returns a value. 
+---
+
+
+---
+	useImperativeHandler: 
+		prerequisite: we should understand how "forwarding refs" work.
+					  Note:- refs CANNOT be passed as a prop.
+					  - allows us to control which properties will be exposed on the ref.
+
+---	
+======
+How to use combineReducers, RootReducer and RootSaga 
+
+reducers/
+reducers/ReducerOne.js
+reducers/ReducerTwo.js
+reducers/RootReducer.js 
+			import { combineReducers } from 'redux';
+			import ReducerOne from './ReducerOne';
+			const RootReducer = combineReducers({
+				ReducerOne
+			});
+sagas/
+sagas/SagaOne.js
+sagas/RootSaga.js 
+
+			import SagaOne from './SagaOne';
+			export default function* RootSaga (){
+				yield all([
+					SagaOne();
+				])
+			}
+
+store.js	
+		const sagaMidddleware = createSagaMiddleware();
+		const ourStore = createStore(RootReducer, applyMiddleware(sagaMidddleware));
+		sagaMidddleware.run(RootSaga);
+		export default ourStore;
+		
+======
+
+Q. How to sync local state and Redux state ?
+A.1.
+	https://www.reddit.com/r/reactjs/comments/g19g8i/reduxtoolkit_how_to_sync_store_change_to_local/
+
+	Also, if your dispatched action is trully async (I imagine you are using redux thunks) 
+	you can do this if you want to sync store to state only once, after fetching the groups:
+
+	useEffect(() => {
+	  dispatch(loadAsync())
+		.then((groups) => {
+		  setLocalGroupsState(groups);
+		});
+	}, []);
+
+A.2. you can also use localStorage. (Persisting state in localStorage).
+	https://egghead.io/lessons/javascript-redux-persisting-the-state-to-the-local-storage
+	
+	store.subscribe(()=>{
+		saveState(store.getState()); // saveState needs to be implemented and it will get n setItem into localstorage.
+	})
+
+	saveState({ todos: store.getState().todos }); // if u want to pass only 1 object and not the whole state.
+	
+Problem:	
+	Everytime the store state changes, store.subscribe() will be called. Lodash has throttle() which can be used as WRAPPER.
+	store.subscribe( throttle(()=>{
+		saveState(store.getState()); 
+	}, 1000))
+	
+---
+
+Another useeffect example 
+
+// 1. Way to solve the infinite loop
+useEffect(() => {
+  const fetchUser = async () => {
+    const res = await fetch(
+      `https://jsonplaceholder.typicode.com/users/${userId}`
+    );
+    const newUser = await res.json();
+    setUser(newUser); // Triggers re-render, but ...
+  };
+
+  fetchUser();
+}, [userId]); // ✅ ... userId stays the same.
+
+
+---
+
+import { BrowserRouter, Route, Switch } from 'react-router';
+
+---
+
+https://reactrouter.com/web/guides/primary-components
+
+<Link to ="/">Home</Link>  // not href, like routerlink in ng. // Finally it will be // <a href="/">Home</a>
+---
+<NavLink to="/react" activeClassName="hurray">
+  React
+</NavLink>
+
+// When the URL is /react, this renders:
+// <a href="/react" className="hurray">React</a>
+
+// When it's something else:
+// <a href="/react">React</a> 
+
+---
+
+<Redirect to="/login" />
+
+---
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  Link,
+  useParams,
+  useRouteMatch,   
+  useHistory,
+  useLocation
+} from "react-router-dom";
+
+// Use useParams() and useRouteMatch() hooks in functional components if reqd.
+
+  let { topicId } = useParams();	
+  let { path, url } = useRouteMatch();
+
+---
+
+React Memoization : use it with React.memo() and only when a function calc. is very heavy. 
+
+useCallback returns its function uncalled so you can call it later, while . // is it always used with React.memo() ??
+useMemo calls its function and returns the result.
+
+https://medium.com/@jan.hesters/usecallback-vs-usememo-c23ad1dc60
+
+	function foo() {
+	  return 'bar';
+	}
+
+	const memoizedCallback = useCallback(foo, []);
+	const memoizedResult = useMemo(foo, []);
+
+	memoizedCallback;
+	// ƒ foo() {
+	//   return 'bar';
+	// }
+	memoizedResult; // 'bar'
+	memoizedCallback(); // 'bar'
+	memoizedResult(); // 🔴 TypeError
+
+---
+
+JSX
+	class -> className , for (in label control) -> htmlFor 
+	<div style={{backgroundColor: 'red'}}></div>	// instead of background-color
+	{handleclick()} // works 
+	{ btnText } // works even if its an array (of strings/numbers) ; but if RHS is an object, react will croak saying "its not a react child"
+	
+	
+---
+Props: single directional flow.
+	>> single props 
+	>> mutliple props // same as single.
+	
+	
+	>> single props : App -> childcomp 
+		App: <Childcomp author="Jenson"/>
+		childcomp: const childcomp = (props) => return(
+													<div>
+														{props.author}
+													</div>
+													)
+																			
+
+---
+
+https://stackblitz.com/edit/react-simple-classcomp1  simple class comp.
+https://stackblitz.com/edit/react-simple-classcomp2	(creation life cycle, updation life cycles and unmounting life cycles and catcherr lifecycles).
+													ComponentDidCatch Doesnt work that well
+Class components: 
+	class App extends React.Component {
+		constructor(props){	//overriding the constructor from React.Component, but still getting everything in its constructor using super(props).
+			super(props);
+			this.state = { somekey: null };	//<<==== VIMP: firstime is the ONLY time u directly assign, else u use setState().
+		}
+	
+		render(){	//<<======= VIMP !!!
+					// DONT create vars/methods here, else those will be called everytime state changes (which in turn causes re-render).
+			return (
+				<div>
+					{this.state.somekey}
+				</div>
+			)
+		}
+	} // App ends
+
+setState:
+	this.setState(someobj); // where someobj = { somekey: 'newval1' } . // note: if key matches to this.state = { somekey: null };, 
+										
+---
+										then it updates the val.
+onClick Method: VIMP. method reference.
+	>> if u define it as handleclick(){}, then in the call it will onClick="{()=>this.handleClick()}" // u have to execute the method !
+			- this style is also useful if u have params.
+				eg. onClick="{()=>this.handleClick(param1)}"
+	>> if u define it as handleclick=()=>{}, then in call it will be onClick="{this.handleClick}" // no need to execute.
+
+---
+
+Class Component LifeCycle:
+	>> Creation:
+		- constructor()
+		- Static getDerivedStateFromProps(): [ 'Static' meaning, u can call it without an object created. eg. Math.pow() ]
+			exists for only one purpose. It enables a component to update its internal state as the result of changes in props. 
+		- render()
+		- componentDidMount() : after render is called.
+	>> Updation:
+		- static getDerivedStateFromProps()
+		- shouldComponentUpdate(): if u return false here, then componentDidUpdate() wont be called.
+		- render()
+		- getSnapShotBeforeUpdate()
+		- ComponentDidUpdate 
+		+ 
+		forceUpdate() --> skips shouldComponentUpdate()
+	
+	>> Unmounting:
+		- ComponentWillUnMount()
+	>> Catch errors: 
+		- static getDerivedStateFromErrors
+		- ComponentDidCatch()
+---
+
+>> mapStateToProps 
+>> mapDispatchToProps
+
+>> mapStateToProps: 
+	- 1st param: state : whole redux state and we can cherry pick state-slice we want.
+	- 2nd param: ownProps : props of the func. comp. 
+
+	reference: 
+	https://www.youtube.com/watch?v=prg6YzRcEvE
+	
+	eg.
+	
+	import { connect } from 'react-redux'; // vimp.
+	
+	const mapStateToProps = (state, ownProps) => {
+		return {  // any obj. we want
+			item1: state.item1;
+			item2: ownProps.numOfPersons
+		};
+	}
+	
+	function ItemContainer(props){
+		return ( 
+			<div>
+				<h2> {props.item1} {props.item2} </h2>
+			</div>
+		)
+	}
+	
+	export default connect(mapStateToProps)ItemContainer
+
+	+
+	
+	App.js 
+	<Provider store={store}>					// wtf is this ?? We need to know context+Provider+useContext().
+		<div className="App">
+			<ItemContainer cake />
+			<ItemContainer />
+		</div>
+	</Provider>
+
+So, I guess, we can do the following:-
+	connect(mapStateToProps)(ItemContainer)	// valid
+	connect(mapStateToProps, mapDispatchToProps)(ItemContainer) // valid. Notice the comma. Dispatches actions & subscribes to reduxstore-changes??
+	connect(null, mapDispatchToProps)(ItemContainer)	// valid. Dispatches actions, but DOES NOT subscribe to reduxstore-changesx
+	
+	connect(mapStateToProps)(mapDispatchToProps)ItemContainer
+	connect(mapStateToProps)(mapDispatchToProps) // wtf is this ?? 
+	
+	
+---	
+>> mapDispatchToProps:
+	ref: https://www.youtube.com/watch?v=gdNitBetNWc
+	
+	1st param: dispatch //??
+	2nd param: ownProps // like in mapStateToProps 
+	
+	eg. const mapDispatchToProps = (dispatch, ownProps) => {
+			const dispatchFunction = ownProps.cake?() => dispatch(buycake()):()=>dispatch(buyIcecream())
+		
+			return {
+				buyItem: dispatchFunction; // public exposure. NOTE: RHS can also be a arrow-function like ()=>{dispatch(somemethod())}
+			}
+		}
+		
+		
+
+---
+
+=====
+
+Sagas : 
+	Ref: https://www.youtube.com/watch?v=eUMbH6X_Adc&t=370s  
+		
+		>> use it to capture an action in the middle. Actions can be "watched".
+		>> Sagas are put inside .run() eg. sagamiddleware.run();
+			-- it will be a generator function that goes inside .run. 
+			-- .run will then monitor the action associated with it.
+		>> Saga.js 
+			import { takeEvery } from 'redux-saga/effects';
+			export function* watchIncrement() {
+				yield takeEvery('ACTION_INCREMENT', someFuncDispatchAnotherAction); // takeEvery means it will be for all ACtions of this name. 
+			}
+			
+			function* someFuncDispatchAnotherAction(){
+				yield put({ type: 'ANOTHER_ACTION', value: '1;})  // VIMP: put can be used to dispatch another action.
+			}
+			
+		// VIMP: reducer should have ANOTHER_ACTION, there should be NO entry for ACTION_INCREMENT !!! Else it will go on infinite loop.  	
+
+'redux-saga/effects': 
+					- takeEvery (all clicks), 
+					- takeLatest (takes the last click), 
+					- put (dispatch another action)
+					- call eg. const data = yield call(Api.fetchUser, action.payload.url)
+						const products = yield Api.fetch('/products').then().catch() ??
+						const results  = yield all([call(task1), call(task2), ...])
+					- fork, spawn : fork is attached forks, and spawn is detached forks.
+						VIMP: 
+								>> Fork :
+									- you can't catch errors from forked tasks. 
+									- Errors from attached forks are bubbled upto parent. 
+								>> Spawn: 
+									- Uncaught errors from spawned tasks are NOT bubbled up to the parent. 
+									
+							  https://redux-saga.js.org/docs/advanced/ForkModel  
+						eg. 
+							function* fetchAll() {
+							  const task1 = yield fork(fetchResource, 'users')	// VIMP note: 1st param: method to be forked.
+																							  2nd param: param to that method in 1st param.
+							  const task2 = yield fork(fetchResource, 'comments')
+							  yield delay(1000)
+							}
+
+							function* fetchResource(resource) {
+							  const {data} = yield call(api.fetch, resource)
+							  yield put(receiveData(data))
+							}
+							
+					- all : blocks until all are resolved -or- one is rejected (like Promise.all)
+						eg. const [users, repos] = yield all([
+							  call(fetch, '/users'),
+							  call(fetch, '/repos')
+							])
+					- select: selecting state slices 
+						ref: https://medium.com/takeaway-tech/getting-started-with-redux-saga-54af359e84ff
+						eg.
+							const onSaleItems = yield select(onSaleItemsSelector)
+							const totalPrice = yield select(totalPriceSelector)
+								
+							const onSaleItemsSelector = state => state.onSaleItems
+							const basketSelector = state => state.basket
+							const totalPriceSelector = state => basketSelector(state).totalPrice
+'redux-saga': delay 
+ 		
+--- 
+	communication between 2 sagas 
+		
+=====
